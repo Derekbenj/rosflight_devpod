@@ -26,11 +26,10 @@ Run the following from the project's root directory:
 devpod up . --ide vscode
 ```
 
-On first launch the container image is built and `postCreateCommand` runs
-`.devcontainer/setup.sh`, which installs the agents and then runs
-`scripts/setup_workspace.sh` (clone → `rosdep` → `colcon build`). **The first
-build takes several minutes.** Build failures are reported but do not abort
-container creation.
+This will launch a VSCode window that is ssh'ed into a Docker container with ROSflight and ROS2 installed. 
+On first launch, the workspace is built using `colcon build`.
+**The first
+build will take several minutes.**
 
 If you prefer plain Docker/VS Code, this is a standard devcontainer — "Reopen in
 Container" from VS Code works too.
@@ -54,7 +53,7 @@ ros2 launch rosplane_sim sim.launch.py     # ROSplane (fixed-wing)
 ros2 launch roscopter_sim sim.launch.py    # ROScopter (multirotor)
 ```
 
-If GUI windows don't appear, run on the **host**: `xhost +local:docker`.
+If GUI windows don't appear, run the following on the **host computer** (not in the DevPod container): `xhost +local:docker`.
 
 
 ## Troubleshooting
