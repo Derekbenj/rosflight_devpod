@@ -74,7 +74,7 @@ not appear, run `xhost +local:docker` on the host.
 
 - **AI coding agents:** Claude Code (Anthropic), Codex CLI (OpenAI)
 - **ROS 2** (`humble` by default) + `ros-dev-tools`, `plotjuggler`, `colcon`, `rosdep`
-- **Dev tools:** Node.js, GitHub CLI, git, tmux, ripgrep, vim, zsh
+- **Dev tools:** Node.js, uv (Python package/env manager, with a managed Python 3.12), GitHub CLI, git, tmux, ripgrep, vim, zsh
 
 ## Conventions
 

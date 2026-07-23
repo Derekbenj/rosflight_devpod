@@ -10,7 +10,7 @@ template and built on ROSflight's official Docker base image
 `devpod up` gives you a container that:
 
 - Builds on the ROSflight base image with `ros-dev-tools`, `plotjuggler`, `colcon`, `rosdep`
-- Installs Claude Code + Codex (like the reference template)
+- Installs Claude Code + Codex + `uv` (like the reference template)
 - Clones the ROSflight repos, resolves dependencies with `rosdep`, and builds the workspace
 - Forwards X11 so RViz / Gazebo / PlotJuggler display on your host
 

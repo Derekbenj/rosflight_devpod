@@ -71,6 +71,19 @@ else
     log "Codex CLI already installed; skipping."
 fi
 
+# --- uv (Python package/environment manager) ---------------------------------
+if ! command -v uv >/dev/null 2>&1; then
+    log "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh || log "WARNING: uv install failed (continuing)."
+    # uv installs to ~/.local/bin, which is already on PATH and persisted above.
+else
+    log "uv already installed; skipping."
+fi
+# Provide a uv-managed CPython (independent of the system/ROS Python).
+if command -v uv >/dev/null 2>&1; then
+    uv python install 3.12 || log "WARNING: 'uv python install 3.12' failed (continuing)."
+fi
+
 # --- Shell config: aliases + vim ---------------------------------------------
 if [ -f "${SCRIPT_DIR}/.bash_aliases" ]; then
     cp "${SCRIPT_DIR}/.bash_aliases" "${HOME}/.bash_aliases"
