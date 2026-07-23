@@ -74,7 +74,11 @@ not appear, run `xhost +local:docker` on the host.
 
 - **AI coding agents:** Claude Code (Anthropic), Codex CLI (OpenAI)
 - **ROS 2** (`humble` by default) + `ros-dev-tools`, `plotjuggler`, `colcon`, `rosdep`
-- **Dev tools:** Node.js, uv (Python package/env manager, with a managed Python 3.12), GitHub CLI, git, tmux, ripgrep, vim, zsh
+- **Dev tools:** Node.js, uv (Python package/env manager, with a managed Python 3.12), Rust (rustup), GitHub CLI, git, tmux, Zellij, ripgrep, vim
+
+The default shell is **bash**. zsh is still installed if you prefer it, but note
+that colcon's `install/setup.bash` cannot be sourced from zsh (it relies on
+`$BASH_SOURCE`) — under zsh use `install/setup.zsh` instead.
 
 ## Conventions
 

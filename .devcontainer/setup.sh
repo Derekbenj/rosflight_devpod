@@ -3,8 +3,9 @@
 # postCreateCommand for the ROSflight Sim devcontainer.
 #
 # 1. Installs the AI coding agents (Claude Code + Codex), matching the
-#    jusevitch/claude_code_devpod template.
-# 2. Wires up ROS 2 + workspace sourcing for both bash and zsh.
+#    jusevitch/claude_code_devpod template, plus uv, Rust, tmux and Zellij.
+# 2. Wires up ROS 2 + workspace sourcing for both bash (the default shell) and
+#    zsh.
 # 3. Hands off to scripts/setup_workspace.sh to clone the ROSflight repos and
 #    build the workspace.
 #
@@ -20,26 +21,32 @@ ROS_DISTRO="${ROS_DISTRO:-humble}"
 
 log() { printf '\n\033[1;34m[setup.sh]\033[0m %s\n' "$*"; }
 
-# --- Node / npm global prefix -------------------------------------------------
-# The node devcontainer feature installs Node via nvm under /usr/local/share/nvm.
-# postCreateCommand runs before interactive shell init, so source nvm here and
-# redirect the npm global prefix into $HOME to avoid permission issues.
+# --- Node / npm ---------------------------------------------------------------
+# The node devcontainer feature installs Node via nvm under /usr/local/share/nvm
+# and sources it from /etc/bash.bashrc + /etc/zsh/zshrc for interactive shells.
+# postCreateCommand runs before that init, so source nvm here to get npm.
+#
+# Do NOT set NPM_CONFIG_PREFIX: nvm hard-refuses to run while it is set
+# ("nvm is not compatible with the NPM_CONFIG_PREFIX environment variable") and
+# drops node off PATH, which is what broke the Codex install. It is not needed
+# either — the feature makes the nvm prefix writable by this user, so
+# 'npm install -g' works as-is.
+unset NPM_CONFIG_PREFIX
 export NVM_DIR="${NVM_DIR:-/usr/local/share/nvm}"
 if [ -s "${NVM_DIR}/nvm.sh" ]; then
     # shellcheck disable=SC1091
     . "${NVM_DIR}/nvm.sh"
+    nvm use --silent default >/dev/null 2>&1 || true
 fi
-
-export NPM_CONFIG_PREFIX="${HOME}/.npm-global"
-mkdir -p "${NPM_CONFIG_PREFIX}/bin"
-# Strip prefix/globalconfig lines that conflict with nvm, if present.
+# Fallback if nvm did not put node on PATH (e.g. a future feature layout change).
+if ! command -v npm >/dev/null 2>&1 && [ -x "${NVM_DIR}/current/bin/npm" ]; then
+    export PATH="${NVM_DIR}/current/bin:${PATH}"
+fi
+# A 'prefix' in ~/.npmrc conflicts with nvm the same way; strip it if present.
 if [ -f "${HOME}/.npmrc" ]; then
     sed -i '/^prefix=/d;/^globalconfig=/d' "${HOME}/.npmrc" || true
 fi
-if command -v nvm >/dev/null 2>&1; then
-    nvm use --delete-prefix --silent default >/dev/null 2>&1 || true
-fi
-export PATH="${NPM_CONFIG_PREFIX}/bin:${HOME}/.local/bin:${PATH}"
+export PATH="${HOME}/.local/bin:${PATH}"
 
 # --- Persist PATH additions for future shells --------------------------------
 add_line() {
@@ -50,9 +57,16 @@ add_line() {
 }
 
 for rc in "${HOME}/.bashrc" "${HOME}/.zshrc"; do
-    add_line "${rc}" 'export NPM_CONFIG_PREFIX="$HOME/.npm-global"'
+    # Earlier revisions of this script exported NPM_CONFIG_PREFIX here, which
+    # breaks the system-wide nvm init in /etc/bash.bashrc and /etc/zsh/zshrc and
+    # leaves interactive shells without node/npm. Drop it from existing rc files.
+    [ -f "${rc}" ] && sed -i '/^export NPM_CONFIG_PREFIX=/d' "${rc}"
+    # ~/.npm-global/bin stays on PATH so anything installed there previously
+    # keeps working; new global installs go to the nvm prefix.
     add_line "${rc}" 'export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"'
+    add_line "${rc}" 'export PATH="$HOME/.cargo/bin:$PATH"'
 done
+export PATH="${HOME}/.cargo/bin:${PATH}"
 
 # --- Claude Code (native installer, same as the reference template) ----------
 if ! command -v claude >/dev/null 2>&1; then
@@ -64,9 +78,14 @@ fi
 
 # --- Codex CLI (npm) ----------------------------------------------------------
 if ! command -v codex >/dev/null 2>&1; then
-    log "Installing Codex CLI..."
-    npm install -g @openai/codex --loglevel=error --no-fund --no-audit \
-        || log "WARNING: Codex install failed (continuing)."
+    if ! command -v npm >/dev/null 2>&1; then
+        log "WARNING: npm not found (nvm at ${NVM_DIR} did not provide node);"
+        log "         skipping Codex. Install it later with 'npm install -g @openai/codex'."
+    else
+        log "Installing Codex CLI (npm $(npm --version), node $(node --version))..."
+        npm install -g @openai/codex --loglevel=error --no-fund --no-audit \
+            || log "WARNING: Codex install failed (continuing)."
+    fi
 else
     log "Codex CLI already installed; skipping."
 fi
@@ -82,6 +101,54 @@ fi
 # Provide a uv-managed CPython (independent of the system/ROS Python).
 if command -v uv >/dev/null 2>&1; then
     uv python install 3.12 || log "WARNING: 'uv python install 3.12' failed (continuing)."
+fi
+
+# --- Rust (rustup toolchain) --------------------------------------------------
+if ! command -v rustc >/dev/null 2>&1; then
+    log "Installing Rust (rustup)..."
+    # --no-modify-path: the PATH line is persisted above, alongside the others.
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --no-modify-path --default-toolchain stable --profile default \
+        || log "WARNING: Rust install failed (continuing)."
+else
+    log "Rust already installed; skipping."
+fi
+
+# --- tmux ---------------------------------------------------------------------
+# Normally already present from the Dockerfile; installed here too so this
+# script is self-sufficient if the base image ever drops it.
+if ! command -v tmux >/dev/null 2>&1; then
+    log "Installing tmux..."
+    sudo apt-get update -qq \
+        && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tmux \
+        || log "WARNING: tmux install failed (continuing)."
+else
+    log "tmux already installed; skipping."
+fi
+
+# --- Zellij (terminal multiplexer) -------------------------------------------
+# Prebuilt static binary from GitHub releases; building from source with
+# 'cargo install zellij' works too but takes many minutes at container create.
+if ! command -v zellij >/dev/null 2>&1; then
+    log "Installing Zellij..."
+    case "$(uname -m)" in
+        x86_64)          ZELLIJ_ARCH="x86_64-unknown-linux-musl" ;;
+        aarch64 | arm64) ZELLIJ_ARCH="aarch64-unknown-linux-musl" ;;
+        *)               ZELLIJ_ARCH="" ;;
+    esac
+    if [ -n "${ZELLIJ_ARCH}" ]; then
+        ZELLIJ_URL="https://github.com/zellij-org/zellij/releases/latest/download/zellij-${ZELLIJ_ARCH}.tar.gz"
+        mkdir -p "${HOME}/.local/bin"
+        if curl -fsSL "${ZELLIJ_URL}" | tar -xz -C "${HOME}/.local/bin" zellij; then
+            chmod +x "${HOME}/.local/bin/zellij"
+        else
+            log "WARNING: Zellij download failed (continuing)."
+        fi
+    else
+        log "WARNING: no Zellij release for $(uname -m); skipping."
+    fi
+else
+    log "Zellij already installed; skipping."
 fi
 
 # --- Shell config: aliases + vim ---------------------------------------------

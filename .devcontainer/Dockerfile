@@ -44,11 +44,12 @@ RUN apt-get update \
         locales \
     && rm -rf /var/lib/apt/lists/*
 
-# Non-root user matching the ROSflight conventions (zsh shell; dialout/plugdev
-# for USB flight-controller access). Passwordless sudo so setup.sh can run
+# Non-root user matching the ROSflight conventions (bash login shell; zsh is
+# still installed and usable, it is just not the default. dialout/plugdev for
+# USB flight-controller access). Passwordless sudo so setup.sh can run
 # rosdep/apt at container-create time.
 RUN groupadd --gid ${USER_GID} ${USERNAME} \
-    && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /usr/bin/zsh ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/bash ${USERNAME} \
     && usermod -aG sudo,dialout,plugdev ${USERNAME} \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME}

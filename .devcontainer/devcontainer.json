@@ -42,6 +42,11 @@
 
     "customizations": {
         "vscode": {
+            // bash is the default shell (see the useradd --shell in the
+            // Dockerfile); colcon's install/setup.bash only works under bash.
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash"
+            },
             "extensions": [
                 "ms-vscode.cpptools",
                 "ms-python.python",
