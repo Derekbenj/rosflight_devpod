@@ -1,0 +1,58 @@
+{
+    "name": "ROSflight Sim DevPod",
+
+    // Builds the ROSflight base image (osrf/ros:${ROS_DISTRO}-desktop).
+    // Change the ROS distro in exactly one place: the ROS_DISTRO build arg
+    // below. It propagates to the Dockerfile ENV and to the setup scripts.
+    // NOTE: Gazebo Classic only works on "humble". "jazzy" is supported too,
+    // but only for the standalone (RViz) and HoloOcean sims.
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "ROS_DISTRO": "humble"
+        }
+    },
+
+    // Layer Node.js (needed for the Codex CLI / npm) and the GitHub CLI on top
+    // of the ROS base image, the same way the reference template does.
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+
+    "remoteUser": "rosflight",
+
+    // Host access for ROS 2 discovery (DDS) and shared-memory transport.
+    // network=host and ipc=host assume a LOCAL Docker DevPod provider; some
+    // remote providers do not support them (see README).
+    "runArgs": [
+        "--network=host",
+        "--ipc=host"
+    ],
+
+    // X11 forwarding so GUI tools (RViz, Gazebo, PlotJuggler) can display on the
+    // host. On the host you may need: xhost +local:docker
+    "containerEnv": {
+        "DISPLAY": "${localEnv:DISPLAY}",
+        "QT_X11_NO_MITSHM": "1"
+    },
+    "mounts": [
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
+    ],
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-python.python",
+                "ms-iot.vscode-ros",
+                "anthropic.claude-code",
+                "openai.codex"
+            ]
+        }
+    },
+
+    // Installs Claude Code + Codex, wires up ROS sourcing, then clones the
+    // ROSflight repos and builds the workspace (rosdep + colcon build).
+    "postCreateCommand": "bash .devcontainer/setup.sh"
+}

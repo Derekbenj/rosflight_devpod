@@ -1,0 +1,3 @@
+# This file keeps the src/ directory tracked by git.
+# The ROSflight package repositories are cloned here by
+# scripts/setup_workspace.sh and are intentionally gitignored.
