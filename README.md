@@ -1,33 +1,28 @@
 # ROSflight Sim DevPod
 
 A [DevPod](https://devpod.sh) container for developing and running
-[ROSflight](https://rosflight.org) simulations, with the **Claude Code** and
-**Codex** AI coding agents preinstalled. It is modeled on the
-[`jusevitch/claude_code_devpod`](https://github.com/jusevitch/claude_code_devpod)
-template and built on ROSflight's official Docker base image
-(`osrf/ros:${ROS_DISTRO}-desktop`, default **Humble**).
-
-`devpod up` gives you a container that:
-
-- Builds on the ROSflight base image with `ros-dev-tools`, `plotjuggler`, `colcon`, `rosdep`
-- Installs Claude Code + Codex + `uv` (like the reference template)
-- Clones the ROSflight repos, resolves dependencies with `rosdep`, and builds the workspace
-- Forwards X11 so RViz / Gazebo / PlotJuggler display on your host
+[ROSflight](https://rosflight.org) simulations.
 
 ## Prerequisites
+
+Install the following:
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [DevPod](https://devpod.sh/docs/getting-started/install) (CLI or desktop app)
 - An X11 server on the host (standard on Linux) for GUI sim tools
 
-## Quick start
+Add Docker as a provider the first time you install DevPod:
 
 ```bash
-# One-time: register Docker as a DevPod provider
 devpod provider add docker
 devpod provider use docker
+```
 
-# From this repo's root:
+## Quick start
+
+Run the following from the project's root directory:
+
+```bash
 devpod up . --ide vscode
 ```
 
@@ -40,17 +35,7 @@ container creation.
 If you prefer plain Docker/VS Code, this is a standard devcontainer — "Reopen in
 Container" from VS Code works too.
 
-## Running the agents
 
-Inside the container:
-
-```bash
-claude          # Claude Code (permissions are pre-bypassed in this container)
-codex           # Codex CLI  (use `codex --yolo` for no approval prompts)
-```
-
-You authenticate the agents interactively on first use — no API keys are stored
-in this repo.
 
 ## Running a simulation
 
@@ -71,36 +56,12 @@ ros2 launch roscopter_sim sim.launch.py    # ROScopter (multirotor)
 
 If GUI windows don't appear, run on the **host**: `xhost +local:docker`.
 
-## Manually (re)building the workspace
-
-The setup script is idempotent — existing clones are left in place:
-
-```bash
-bash scripts/setup_workspace.sh                 # clone + rosdep + colcon build
-ROSFLIGHT_SKIP_BUILD=1 bash scripts/setup_workspace.sh   # clone + rosdep only
-```
 
 ## Troubleshooting
 
-**`colcon build` fails with `find_package` errors** (e.g. "Could not find a
-package configuration file provided by `eigen_stl_containers`"). The ROS
-dependencies were never installed — usually because `postCreateCommand` hit a
-network hiccup. Re-run the setup script; it is idempotent:
+Frankly, just ask any capable AI agent for help. As of July 2026 this will probably be more effective than outdated instructions in this README.md. 
 
-```bash
-bash scripts/setup_workspace.sh
-```
-
-**`failed to create symbolic link ... because existing path cannot be removed:
-Is a directory`.** The `build/` directory was populated by a plain
-`colcon build` and is now being reused by `colcon build --symlink-install`.
-Always build this workspace with `--symlink-install` (the `cb` alias does), and
-clear the mismatched artifacts once:
-
-```bash
-rm -rf build install log
-colcon build --symlink-install
-```
+You can point your AI agent to the instructions on the [project website](https://docs.rosflight.org/latest/user-guide/overview/) for context.
 
 ## Changing the ROS distribution
 
@@ -114,29 +75,16 @@ Set it to `jazzy` for ROS 2 Jazzy (Ubuntu 24.04), then rebuild the container.
 **Note:** Gazebo Classic is EOL and does **not** work on Jazzy — only the
 standalone (RViz) and HoloOcean sims are available there.
 
-## Connecting real hardware (optional)
 
-This template is simulation-focused, so it does **not** run privileged or bind
-`/dev`. To use a physical flight controller, add to
-`.devcontainer/devcontainer.json`:
+## Additional included features
 
-```jsonc
-"runArgs": ["--network=host", "--ipc=host", "--privileged"],
-"mounts": [
-    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
-    "source=/dev,target=/dev,type=bind"
-]
-```
+- **Claude Code** and the **Codex CLI**
+  - Run `claude` or `codex` to launch these.
+- **uv**, plus a uv-managed **Python 3.12**
+- **Rust** (rustup, stable toolchain)
+- **tmux** and **Zellij**
 
-`--privileged` grants broad host access — enable it only when you need it.
 
-## Security notes
-
-- `.claude/settings.json` sets `defaultMode: bypassPermissions`, so Claude Code
-  acts without approval prompts. This is intended for a disposable container; if
-  you'd rather be prompted, remove that setting.
-- `--network=host` / `--ipc=host` assume a **local Docker** provider. Remote
-  DevPod providers may not support host networking or GUI forwarding.
 
 ## Layout
 
