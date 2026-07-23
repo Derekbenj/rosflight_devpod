@@ -1,4 +1,4 @@
-# ROSflight Sim DevPod
+# ROSflight DevPod
 
 A [DevPod](https://devpod.sh) container for developing and running
 [ROSflight](https://rosflight.org) simulations.
