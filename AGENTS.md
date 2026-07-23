@@ -11,14 +11,16 @@ template and follows the official
 - `.devcontainer/` — container definition
   - `Dockerfile` — `osrf/ros:${ROS_DISTRO}-desktop` base + ROS/dev tooling + non-root `rosflight` user
   - `devcontainer.json` — build args, features (Node, GitHub CLI), X11/networking, extensions, `postCreateCommand`
-  - `setup.sh` — post-create: installs Claude Code + Codex, wires ROS sourcing, runs the workspace setup
+  - `setup.sh` — post-create: installs tools/config, wires ROSflight and Veloxity sourcing, runs the workspace setup
   - `.bash_aliases` — git + colcon shortcuts
 - `.claude/settings.json` — Claude Code runs with `bypassPermissions` inside the container
-- `scripts/setup_workspace.sh` — clones the ROSflight repos, runs `rosdep`, builds with `colcon`
+- `scripts/setup_workspace.sh` — clones ROSflight and Veloxity, runs `rosdep`, and builds both ROS 2 overlays
+- `config/veloxity/` — durable airframe configuration installed into `~/.config/veloxity` without overwriting existing files
 - `src/` — ROS 2 packages (cloned here; gitignored)
   - `rosflight_ros_pkgs` — core ROS stack: `rosflight_io`, `rosflight_sim`, `rosflight_msgs`, and the `rosflight_firmware` submodule (SIL)
   - `rosplane` — fixed-wing autopilot (`rosplane_sim`)
   - `roscopter` — multirotor autopilot (`roscopter_sim`)
+- `~/Veloxity` — Rust flight core, simulator static library, and ROS 2 C-FFI shim overlay
 
 ## ROS distribution
 
@@ -36,6 +38,7 @@ From the workspace root:
 source /opt/ros/${ROS_DISTRO}/setup.bash   # ROS_DISTRO defaults to humble
 colcon build --symlink-install
 source install/setup.bash
+source ~/Veloxity/workspace/install/setup.bash
 ```
 
 The devcontainer runs this automatically on creation via
@@ -53,6 +56,7 @@ Run from the workspace root with the workspace sourced.
 
 ```bash
 # Standalone (RViz) sim — works on all supported distros
+ros2 launch veloxity_sil_board_shim multirotor_standalone_sil.launch.py use_rviz:=true
 ros2 launch rosflight_sim multirotor_standalone.launch.py
 ros2 launch rosflight_sim fixedwing_standalone.launch.py
 # Add keyboard manual control (VimFly):
@@ -74,7 +78,7 @@ not appear, run `xhost +local:docker` on the host.
 
 - **AI coding agents:** Claude Code (Anthropic), Codex CLI (OpenAI)
 - **ROS 2** (`humble` by default) + `ros-dev-tools`, `plotjuggler`, `colcon`, `rosdep`
-- **Dev tools:** Node.js, uv (Python package/env manager, with a managed Python 3.12), Rust (rustup), GitHub CLI, git, tmux, Zellij, ripgrep, vim
+- **Dev tools:** Node.js, uv (Python package/env manager, with a managed Python 3.12), Rust (rustup), GitHub CLI, git, GNU Screen, tmux, Zellij, ripgrep, vim
 
 The default shell is **bash**. zsh is still installed if you prefer it, but note
 that colcon's `install/setup.bash` cannot be sourced from zsh (it relies on
@@ -82,7 +86,8 @@ that colcon's `install/setup.bash` cannot be sourced from zsh (it relies on
 
 ## Conventions
 
-- The three `src/` repos are cloned, not vendored — do not commit their contents
-  to this repo. Edit them in place; each has its own upstream git history.
+- The three `src/` repos and `~/Veloxity` are cloned, not vendored. Edit them
+  in place; each has its own upstream git history.
 - Keep `scripts/setup_workspace.sh` idempotent (it must be safe to re-run).
+- Preserve existing Veloxity checkouts and `~/.config/veloxity` files on rerun.
 - `rosflight_firmware` is a git submodule of `rosflight_ros_pkgs`.

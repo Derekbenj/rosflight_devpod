@@ -6,8 +6,9 @@
 #    jusevitch/claude_code_devpod template, plus uv, Rust, tmux and Zellij.
 # 2. Wires up ROS 2 + workspace sourcing for both bash (the default shell) and
 #    zsh.
-# 3. Hands off to scripts/setup_workspace.sh to clone the ROSflight repos and
-#    build the workspace.
+# 3. Installs the Veloxity airframe configuration.
+# 4. Hands off to scripts/setup_workspace.sh to clone and build ROSflight and
+#    Veloxity.
 #
 # Runs as the "rosflight" user. Idempotent: safe to re-run.
 
@@ -157,6 +158,18 @@ if [ -f "${SCRIPT_DIR}/.bash_aliases" ]; then
     add_line "${HOME}/.bashrc" '[ -f "$HOME/.bash_aliases" ] && . "$HOME/.bash_aliases"'
 fi
 
+# --- Veloxity airframe configuration -----------------------------------------
+# Copy only files which are not already present. This makes reruns safe for
+# locally tuned parameters and command helpers.
+VELOXITY_CONFIG_TEMPLATE="${WS_ROOT}/config/veloxity"
+VELOXITY_CONFIG_HOME="${HOME}/.config/veloxity"
+if [ ! -d "${VELOXITY_CONFIG_TEMPLATE}" ]; then
+    log "ERROR: Veloxity configuration template is missing: ${VELOXITY_CONFIG_TEMPLATE}"
+    exit 1
+fi
+mkdir -p "${VELOXITY_CONFIG_HOME}"
+cp -an "${VELOXITY_CONFIG_TEMPLATE}/." "${VELOXITY_CONFIG_HOME}/"
+
 if [ ! -f "${HOME}/.vimrc" ]; then
     cat > "${HOME}/.vimrc" <<'VIMRC'
 syntax on
@@ -182,18 +195,27 @@ setup_ros_sourcing() {
 }
 setup_ros_sourcing "${HOME}/.bashrc" "bash"
 setup_ros_sourcing "${HOME}/.zshrc" "zsh"
+
+setup_veloxity_sourcing() {
+    local rc="$1" ext="$2"
+    add_line "${rc}" "export ROSFLIGHT_WS=\"${WS_ROOT}\""
+    add_line "${rc}" 'export VELOXITY_ROOT="$HOME/Veloxity"'
+    add_line "${rc}" "[ -f \"\$VELOXITY_ROOT/workspace/install/setup.${ext}\" ] && source \"\$VELOXITY_ROOT/workspace/install/setup.${ext}\""
+    add_line "${rc}" '[ -f "$HOME/.config/veloxity/airframes/3dquad/setup.zsh" ] && source "$HOME/.config/veloxity/airframes/3dquad/setup.zsh"'
+    add_line "${rc}" '[ -f "$HOME/.config/veloxity/airframes/3dquad/commands.zsh" ] && source "$HOME/.config/veloxity/airframes/3dquad/commands.zsh"'
+    add_line "${rc}" '[ -f "$HOME/.config/veloxity/airframes/fixedwing/setup.zsh" ] && source "$HOME/.config/veloxity/airframes/fixedwing/setup.zsh"'
+    add_line "${rc}" '[ -f "$HOME/.config/veloxity/airframes/fixedwing/commands.zsh" ] && source "$HOME/.config/veloxity/airframes/fixedwing/commands.zsh"'
+}
+setup_veloxity_sourcing "${HOME}/.bashrc" "bash"
+setup_veloxity_sourcing "${HOME}/.zshrc" "zsh"
+
 # ROS 2 CLI autocompletion for zsh.
 add_line "${HOME}/.zshrc" 'eval "$(register-python-argcomplete3 ros2)"'
 add_line "${HOME}/.zshrc" 'eval "$(register-python-argcomplete3 colcon)"'
 
 # --- Workspace: clone repos + rosdep + colcon build --------------------------
-# Non-fatal: a build failure should not abort container creation.
 log "Setting up the ROSflight workspace (clone + rosdep + colcon build)..."
-if bash "${WS_ROOT}/scripts/setup_workspace.sh"; then
-    log "Workspace setup complete."
-else
-    log "WARNING: workspace setup reported an error. The container is still usable;"
-    log "         re-run 'bash scripts/setup_workspace.sh' after resolving the issue."
-fi
+bash "${WS_ROOT}/scripts/setup_workspace.sh"
+log "Workspace setup complete."
 
 log "postCreate finished. Open a new shell (or 'source ~/.bashrc') to load ROS."

@@ -1,0 +1,24 @@
+wp:
+  w: [400.0, -250.0, -70.0]
+  chi_d: 1.1518
+  lla: False
+  use_chi: False
+  va_d: 17.0
+wp:
+  w: [-400.0, -50.0, -70.0]
+  chi_d: 1.1518
+  lla: False
+  use_chi: False
+  va_d: 17.0
+wp:
+  w: [-400.0, -250.0, -70.0]
+  chi_d: 1.1518
+  lla: False
+  use_chi: False
+  va_d: 17.0
+wp:
+  w: [400.0, -50.0, -70.0]
+  chi_d: 1.1518
+  lla: False
+  use_chi: False
+  va_d: 17.0

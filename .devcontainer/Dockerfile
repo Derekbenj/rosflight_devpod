@@ -6,9 +6,10 @@
 # Humble, which is the only distro that supports Gazebo Classic.
 #
 # This Dockerfile only installs system/ROS tooling and creates the user. The AI
-# coding agents (Claude Code, Codex) and the ROS workspace build happen at
-# container-create time in .devcontainer/setup.sh, because the workspace source
-# is bind-mounted and is not available during the image build.
+# coding agents (Claude Code, Codex), airframe configuration, and
+# ROSflight/Veloxity builds happen at container-create time in
+# .devcontainer/setup.sh because the workspace source is bind-mounted and is
+# not available during the image build.
 
 ARG ROS_DISTRO=humble
 FROM osrf/ros:${ROS_DISTRO}-desktop
@@ -39,6 +40,7 @@ RUN apt-get update \
         zsh \
         vim \
         tmux \
+        screen \
         ripgrep \
         ca-certificates \
         locales \

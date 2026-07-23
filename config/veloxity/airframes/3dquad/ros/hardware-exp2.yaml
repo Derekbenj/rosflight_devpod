@@ -1,0 +1,46 @@
+/**:
+  ros__parameters:
+    gravity: 9.81
+
+    # Replace with measured ready-to-fly mass in kilograms
+    mass: 0.821
+
+/path_manager:
+  ros__parameters:
+    waypoint_tolerance: 0.5
+    max_velocity: 1.5
+    max_acceleration: 1.0
+
+/trajectory_follower:
+  ros__parameters:
+    u_n_kp: 1.5
+    u_n_ki: 0.01
+    u_n_kd: 3.5
+
+    u_e_kp: 1.5
+    u_e_ki: 0.01
+    u_e_kd: 3.5
+
+/trajectory_velocity_adapter:
+  ros__parameters:
+    north_kp: 1.5
+    north_kd: 3.5
+    east_kp: 1.5
+    east_kd: 3.5
+    down_kp: 4.0
+    down_kd: 3.5
+
+/thrust_to_throttle_adapter:
+  ros__parameters:
+    equilibrium_throttle: 0.686
+    min_throttle: 0.40
+    max_throttle: 0.85
+    max_roll_rad: 0.30
+    max_pitch_rad: 0.30
+    max_yaw_rate_rad_s: 0.70
+
+/controller:
+  ros__parameters:
+    equilibrium_throttle: 0.686
+    min_throttle: 0.40
+    max_throttle: 0.85

@@ -1,0 +1,32 @@
+wp:
+  type: 1
+  w: [0.0, 0.0, -5.0]
+  speed: 0.5
+  psi: 2.18
+  use_lla: false
+  hold_seconds: 0.0
+  hold_indefinitely: false
+wp:
+  type: 1
+  w: [-20.0, 0.0, -5.0]
+  speed: 0.5
+  psi: 2.18
+  use_lla: false
+  hold_seconds: 0.0
+  hold_indefinitely: false
+wp:
+  type: 1
+  w: [-20.0, 20.0, -15.0]
+  speed: 0.5
+  psi: 2.18
+  use_lla: false
+  hold_seconds: 0.0
+  hold_indefinitely: false
+wp:
+  type: 1
+  w: [0.0, 20.0, -10.0]
+  speed: 0.5
+  psi: 2.18
+  use_lla: false
+  hold_seconds: 0.0
+  hold_indefinitely: false

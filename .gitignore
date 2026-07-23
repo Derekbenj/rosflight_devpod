@@ -10,6 +10,10 @@
 /src/rosplane/
 /src/roscopter/
 
+# Veloxity is cloned into ~/Veloxity inside the container. Keep this guard for
+# users who override VELOXITY_ROOT to a checkout under the workspace.
+/Veloxity/
+
 # Claude Code local (user-specific) settings
 .claude/settings.local.json
 

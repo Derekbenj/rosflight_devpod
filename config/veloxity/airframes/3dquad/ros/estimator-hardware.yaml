@@ -1,0 +1,4 @@
+/estimator:
+  ros__parameters:
+    max_baro_sensor_silence_duration_ms: 60
+    max_mag_sensor_silence_duration_ms: 60

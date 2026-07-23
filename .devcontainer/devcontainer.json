@@ -57,7 +57,7 @@
         }
     },
 
-    // Installs Claude Code + Codex, wires up ROS sourcing, then clones the
-    // ROSflight repos and builds the workspace (rosdep + colcon build).
+    // Installs Claude Code + Codex, wires up ROS/Veloxity sourcing, installs
+    // the airframe config, then clones and builds ROSflight plus Veloxity.
     "postCreateCommand": "bash .devcontainer/setup.sh"
 }
