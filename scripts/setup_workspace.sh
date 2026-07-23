@@ -60,15 +60,24 @@ if [ ! -f "/opt/ros/${ROS_DISTRO}/setup.bash" ]; then
     warn "ROS distro '${ROS_DISTRO}' not found at /opt/ros/${ROS_DISTRO}. Aborting build steps."
     exit 1
 fi
+# NOTE: the ament/colcon setup scripts read undefined variables (e.g.
+# AMENT_TRACE_SETUP_FILES), so they abort under `set -u`. Disable nounset
+# across the source, then restore it.
+set +u
 # shellcheck disable=SC1090
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
+set -u
 
 # --- 4. rosdep dependencies ---------------------------------------------------
 log "Installing dependencies with rosdep..."
+# The base image clears /var/lib/apt/lists, so apt cannot resolve any package
+# name until the lists are refreshed. rosdep shells out to `apt-get install`,
+# so without this it fails with "Unable to locate package ...".
+sudo apt-get update
 # rosdep init errors harmlessly if already initialized.
 sudo rosdep init >/dev/null 2>&1 || true
 rosdep update
-rosdep install --from-paths src --ignore-src -y
+rosdep install --from-paths src --ignore-src --rosdistro "${ROS_DISTRO}" -y
 
 # --- 5. Build -----------------------------------------------------------------
 if [ "${ROSFLIGHT_SKIP_BUILD}" = "1" ]; then

@@ -80,6 +80,28 @@ bash scripts/setup_workspace.sh                 # clone + rosdep + colcon build
 ROSFLIGHT_SKIP_BUILD=1 bash scripts/setup_workspace.sh   # clone + rosdep only
 ```
 
+## Troubleshooting
+
+**`colcon build` fails with `find_package` errors** (e.g. "Could not find a
+package configuration file provided by `eigen_stl_containers`"). The ROS
+dependencies were never installed — usually because `postCreateCommand` hit a
+network hiccup. Re-run the setup script; it is idempotent:
+
+```bash
+bash scripts/setup_workspace.sh
+```
+
+**`failed to create symbolic link ... because existing path cannot be removed:
+Is a directory`.** The `build/` directory was populated by a plain
+`colcon build` and is now being reused by `colcon build --symlink-install`.
+Always build this workspace with `--symlink-install` (the `cb` alias does), and
+clear the mismatched artifacts once:
+
+```bash
+rm -rf build install log
+colcon build --symlink-install
+```
+
 ## Changing the ROS distribution
 
 Edit the single build arg in [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json):
